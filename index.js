@@ -1,12 +1,14 @@
 const express = require("express");
 const cors = require("cors");
 const app = express();
+const bodyParser = require("body-parser");
 const port = 5000;
 
-app.use(cors());
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+app.use(cors());
 
-const { MongoClient, ServerApiVersion } = require("mongodb");
+const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 const uri =
   "mongodb+srv://journeyman:Raihan1234@cluster0.e4yec41.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0";
 
@@ -30,6 +32,7 @@ async function run() {
       res.send("Hello Journeyman");
     });
 
+    // Add new User
     app.post("/users", async (req, res) => {
       const user = req.body;
       // Check if user already exist
@@ -40,6 +43,28 @@ async function run() {
       }
       // if user already not exist then store in mongodb
       const result = await userCollection.insertOne(user);
+      res.send(result);
+    });
+
+    // Get all users
+    app.get("/users", async (req, res) => {
+      const users = await userCollection.find().toArray();
+      res.send(users);
+    });
+
+    // Update user
+    app.patch("/users/:id", async (req, res) => {
+      const id = req.params;
+      const filter = { _id: new ObjectId(id) };
+      const options = { upsert: true };
+      const userDetails = req.body;
+      const updateDoc = {
+        $set: {
+          username: userDetails.username,
+          address: userDetails.address,
+        },
+      };
+      const result = await userCollection.updateOne(filter, updateDoc, options);
       res.send(result);
     });
   } finally {
